@@ -236,7 +236,7 @@ function render(items){
     const icon=state.section==="movies"?"🎬":"📺";
     const img=it.image?`<img src="${escapeHtml(it.image)}" loading="lazy">`:icon;
     el.innerHTML=`<div class="poster">${img}</div><div class="meta"><h4>${escapeHtml(it.title||"Bez názvu")}</h4></div>`;
-    el.onclick=()=>playItem(it);
+    el.onclick=()=>openItem(it);
     grid.appendChild(el);
   }
 }
