@@ -293,6 +293,7 @@ async function loadEpisodes(show){
 function parseEpisodesFromHtml(html,baseUrl){
   const episodes=[];
   const text=html||"";
+
   const re=/<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
   let m;
 
@@ -302,38 +303,41 @@ function parseEpisodesFromHtml(html,baseUrl){
     if(!url || !url.includes("/cs/player/"))continue;
 
     const raw=m[2]||"";
-    const after=text.slice(re.lastIndex,re.lastIndex+1500);
+    const before=text.slice(Math.max(0,m.index-2500),m.index);
+    const after=text.slice(re.lastIndex,re.lastIndex+4000);
+    const area=before+raw+after;
 
     let title=
+      first(before,/<h[1-4][^>]*>([\s\S]*?)<\/h[1-4]>/i) ||
+      first(after,/<h[1-4][^>]*>([\s\S]*?)<\/h[1-4]>/i) ||
       attr(raw,/title=["']([^"']+)["']/i) ||
       attr(raw,/alt=["']([^"']+)["']/i) ||
       clean(raw) ||
-      first(after,/<h1[^>]*>([\s\S]*?)<\/h1>/i) ||
-      first(after,/<h2[^>]*>([\s\S]*?)<\/h2>/i) ||
-      first(after,/<h3[^>]*>([\s\S]*?)<\/h3>/i) ||
       titleFromUrl(url);
 
     title=String(title||"").replace(/\s+/g," ").trim();
 
-if(!title || /^(shl[eé]dnout|sledovat|sledovať|play|prehrát|prehrať)$/i.test(title)){
-  title=titleFromUrl(url)||"Epizóda";
-}
-
-    let image =
-  firstUrl(raw+after,baseUrl,/<img[^>]+data-src=["']([^"']+)["']/i) ||
-  firstUrl(raw+after,baseUrl,/<img[^>]+src=["']([^"']+)["']/i) ||
-  firstUrl(after,baseUrl,/<img[^>]+data-src=["']([^"']+)["']/i) ||
-  firstUrl(after,baseUrl,/<img[^>]+src=["']([^"']+)["']/i);
-
-image=proxiedUrl(image);
-
-episodes.push({
-  title,
-  url,
-  image,
-  section:"series"
-});
+    if(!title || /^(shl[eé]dnout|sledovat|sledovať|play|prehrát|prehrať)$/i.test(title)){
+      title=titleFromUrl(url)||"Epizóda";
     }
+
+    const imgs=[];
+    area.replace(/<img[^>]+(?:data-src|data-original|src)=["']([^"']+)["'][^>]*>/gi,(all,src)=>{
+      const img=proxiedUrl(unwrapProxy(absolute(src,baseUrl)));
+      if(img && !/\/(hd|cz|sk|play|speaker|audio|flag|icon)/i.test(img)){
+        imgs.push(img);
+      }
+    });
+
+    let image=imgs.find(x=>/\.(jpg|jpeg|png|webp)/i.test(x))||"";
+
+    episodes.push({
+      title,
+      url,
+      image,
+      section:"series"
+    });
+  }
 
   const seen=new Set();
   return episodes.filter(ep=>{
