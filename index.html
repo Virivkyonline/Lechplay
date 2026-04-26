@@ -537,5 +537,7 @@ q.addEventListener("keydown",e=>{
   if(e.key==="Enter")doSearch();
 });
 
-selectSection("movies");
-</script>
+document.addEventListener("DOMContentLoaded", () => {
+  setTheme(localStorage.getItem("lechplay_theme") || "purple");
+  selectSection("movies");
+});
