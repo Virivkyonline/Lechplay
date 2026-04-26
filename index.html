@@ -1,4 +1,3 @@
-```html
 <!doctype html>
 <html lang="sk">
 <head>
@@ -7,99 +6,45 @@
 <title>LechPlay</title>
 
 <style>
-body {
-  margin:0;
-  font-family: Arial, sans-serif;
-  background:#0b1220;
-  color:#fff;
-}
-
-header {
-  padding:16px;
-  background:#111827;
-  display:flex;
-  gap:10px;
-}
-
-input {
-  flex:1;
-  padding:10px;
-  border-radius:8px;
-  border:none;
-}
-
-button {
-  padding:10px 14px;
-  border:none;
-  border-radius:8px;
-  background:#6366f1;
-  color:white;
-  cursor:pointer;
-}
-
-.grid {
-  display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
-  gap:12px;
-  padding:12px;
-}
-
-.item {
-  background:#1f2937;
-  padding:10px;
-  border-radius:10px;
-  cursor:pointer;
-}
-
-.player {
-  position:fixed;
-  inset:0;
-  background:black;
-  display:none;
-  flex-direction:column;
-}
-
-.player.active {
-  display:flex;
-}
-
-video {
-  width:100%;
-  height:100%;
-}
+body{margin:0;font-family:Arial;background:#0b1220;color:#fff}
+header{padding:16px;background:#111827;display:flex;gap:10px}
+input{flex:1;padding:10px;border-radius:8px;border:none}
+button{padding:10px 14px;border:none;border-radius:8px;background:#6366f1;color:white;cursor:pointer}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;padding:12px}
+.item{background:#1f2937;padding:10px;border-radius:10px;cursor:pointer}
+.player{position:fixed;inset:0;background:black;display:none;flex-direction:column}
+.player.active{display:flex}
+video{width:100%;height:100%}
 </style>
 </head>
 
 <body>
 
 <header>
-  <input id="q" placeholder="Hľadať film...">
-  <button onclick="search()">Hľadať</button>
+<input id="q" placeholder="Hľadať film...">
+<button onclick="search()">Hľadať</button>
 </header>
 
 <div class="grid" id="grid"></div>
 
 <div class="player" id="player">
-  <button onclick="closePlayer()">Zavrieť</button>
-  <div id="playerBody"></div>
+<button onclick="closePlayer()">Zavrieť</button>
+<div id="playerBody"></div>
 </div>
 
 <script>
-const API_BASE = "https://lecharchiv-api.virivkyonlinecz.workers.dev/";
+const API_BASE = "https://lecharchiv-api.virivkyonlinecz.workers.dev";
 
 async function search(){
   const q = document.getElementById("q").value;
-
   const res = await fetch(API_BASE + "/api/search?q=" + encodeURIComponent(q));
   const data = await res.json();
-
   render(data.items || []);
 }
 
 function render(items){
   const grid = document.getElementById("grid");
   grid.innerHTML = "";
-
   items.forEach(it=>{
     const el = document.createElement("div");
     el.className = "item";
@@ -112,7 +57,6 @@ function render(items){
 async function play(item){
   const player = document.getElementById("player");
   const body = document.getElementById("playerBody");
-
   player.classList.add("active");
   body.innerHTML = "Načítavam...";
 
@@ -121,14 +65,9 @@ async function play(item){
     const data = await res.json();
 
     if(data.videoUrl){
-      body.innerHTML = `
-        <video controls autoplay playsinline src="${data.videoUrl}"></video>
-      `;
+      body.innerHTML = `<video controls autoplay playsinline src="${data.videoUrl}"></video>`;
     } else {
-      body.innerHTML = `
-        <p>Video nejde prehrať</p>
-        <a href="${data.videoUrl}" target="_blank">Stiahnuť</a>
-      `;
+      body.innerHTML = `<p>Video nejde prehrať</p>`;
     }
 
   } catch(e){
@@ -144,4 +83,3 @@ function closePlayer(){
 
 </body>
 </html>
-```
