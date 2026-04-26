@@ -30,22 +30,119 @@ body.theme-blue{--a:#38bdf8;--b:#2563eb;--c:#1d4ed8}body.theme-gold{--a:#fbbf24;
 <div class="toolbar"><div class="search"><input id="q" placeholder="Hľadať..." /><button class="btn primary" id="searchBtn">Hľadať</button></div><button class="btn" id="homeBtn">Domov</button></div>
 <div class="content-head"><h3 id="sectionTitle">🎬 Filmy</h3><p id="sectionSub">movies.sosac.tv/cs/</p></div><section class="grid" id="grid"></section><div class="empty" id="empty">Načítavam...</div></div>
 <section class="player" id="player"><div class="playerbar"><button class="btn" id="closePlayer">✕ Zavrieť</button><b id="playerTitle">Prehrávač</b><div class="spacer"></div><button class="btn" id="reloadPlayer">↻</button></div><div id="playerBody"></div></section><div class="toast" id="toast"></div>
+
 <script>
 const API_BASE = "https://lecharchiv-api.virivkyonlinecz.workers.dev";
 const SOURCES={movies:{title:"🎬 Filmy",sub:"movies.sosac.tv/cs/"},series:{title:"📺 Seriály",sub:"tv.sosac.tv/cs/"}};
 let state={section:"movies",lastPlay:null};
+
 function toast(msg){const t=document.getElementById("toast");t.textContent=msg;t.style.display="block";setTimeout(()=>t.style.display="none",2600)}
 function escapeHtml(s){return String(s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 function setTheme(theme){document.body.className="theme-"+theme;localStorage.setItem("lechplay_theme",theme);document.querySelectorAll(".dot").forEach(d=>d.classList.toggle("active",d.dataset.theme===theme))}
 document.querySelectorAll(".dot").forEach(d=>d.onclick=()=>setTheme(d.dataset.theme));setTheme(localStorage.getItem("lechplay_theme")||"purple");
-async function api(path){const r=await fetch(API_BASE.replace(/\/$/,"")+path,{headers:{"accept":"application/json"}});if(!r.ok)throw new Error("API chyba "+r.status);const data=await r.json();if(data.error)throw new Error(data.message||"API chyba");return data}
+
+async function api(path){
+  const r=await fetch(API_BASE.replace(/\/$/,"")+path,{headers:{"accept":"application/json"}});
+  if(!r.ok)throw new Error("API chyba "+r.status);
+  const data=await r.json();
+  if(data.error)throw new Error(data.message||"API chyba");
+  return data;
+}
+
 function normalize(data){return Array.isArray(data)?data:(data.items||data.results||[])}
-function render(items){grid.innerHTML="";if(!items.length){empty.style.display="block";empty.textContent="Nič sa nenašlo.";return}empty.style.display="none";for(const it of items){const el=document.createElement("article");el.className="item";const icon=state.section==="movies"?"🎬":"📺";const img=it.image?`<img src="${escapeHtml(it.image)}" loading="lazy">`:icon;el.innerHTML=`<div class="poster">${img}</div><div class="meta"><h4>${escapeHtml(it.title||"Bez názvu")}</h4><p>${escapeHtml(it.url||"")}</p></div>`;el.onclick=()=>playItem(it);grid.appendChild(el)}}
-async function selectSection(section){state.section=section;document.querySelectorAll(".section-card").forEach(x=>x.classList.toggle("active",x.dataset.section===section));sectionTitle.textContent=SOURCES[section].title;sectionSub.textContent=SOURCES[section].sub;q.value="";await loadSection()}
-async function loadSection(){try{empty.style.display="block";empty.textContent="Načítavam...";grid.innerHTML="";const data=await api("/api/list?type="+encodeURIComponent(state.section));render(normalize(data))}catch(e){empty.style.display="block";empty.textContent=e.message;toast(e.message)}}
-async function doSearch(){const query=q.value.trim();if(!query)return loadSection();try{empty.style.display="block";empty.textContent="Hľadám...";grid.innerHTML="";const data=await api("/api/search?section="+encodeURIComponent(state.section)+"&q="+encodeURIComponent(query));render(normalize(data))}catch(e){empty.textContent=e.message;toast(e.message)}}
-async function playItem(it){state.lastPlay=it;playerTitle.textContent=it.title||"Prehrávač";player.classList.add("active");playerBody.innerHTML='<div class="empty" style="margin:22px">Načítavam prehrávač...</div>';try{const data=await api("/api/play?url="+encodeURIComponent(it.url));if(data.videoUrl){playerBody.innerHTML=`<video controls autoplay playsinline src="${escapeHtml(data.videoUrl)}"></video>`;return}if(data.embedUrl){playerBody.innerHTML=`<iframe class="playerframe" allowfullscreen allow="autoplay; fullscreen; encrypted-media; picture-in-picture" src="${escapeHtml(data.embedUrl)}"></iframe>`;return}if(data.proxyUrl){playerBody.innerHTML=`<iframe class="playerframe" allowfullscreen allow="autoplay; fullscreen; encrypted-media; picture-in-picture" src="${escapeHtml(API_BASE.replace(/\/$/,"")+data.proxyUrl)}"></iframe>`;return}playerBody.innerHTML='<div class="empty" style="margin:22px">Prehrávač sa nenašiel. Skús inú položku.</div>'}catch(e){playerBody.innerHTML='<div class="empty" style="margin:22px">'+escapeHtml(e.message)+'</div>';toast(e.message)}}
-closePlayer.onclick=()=>{player.classList.remove("active");playerBody.innerHTML=""};reloadPlayer.onclick=()=>{if(state.lastPlay)playItem(state.lastPlay)};searchBtn.onclick=doSearch;refreshBtn.onclick=loadSection;homeBtn.onclick=()=>selectSection(state.section);q.addEventListener("keydown",e=>{if(e.key==="Enter")doSearch()});selectSection("movies");
+
+function render(items){
+  grid.innerHTML="";
+  if(!items.length){empty.style.display="block";empty.textContent="Nič sa nenašlo.";return}
+  empty.style.display="none";
+  for(const it of items){
+    const el=document.createElement("article");
+    el.className="item";
+    const icon=state.section==="movies"?"🎬":"📺";
+    const img=it.image?`<img src="${escapeHtml(it.image)}" loading="lazy">`:icon;
+    el.innerHTML=`<div class="poster">${img}</div><div class="meta"><h4>${escapeHtml(it.title||"Bez názvu")}</h4><p>${escapeHtml(it.url||"")}</p></div>`;
+    el.onclick=()=>playItem(it);
+    grid.appendChild(el);
+  }
+}
+
+async function selectSection(section){
+  state.section=section;
+  document.querySelectorAll(".section-card").forEach(x=>x.classList.toggle("active",x.dataset.section===section));
+  sectionTitle.textContent=SOURCES[section].title;
+  sectionSub.textContent=SOURCES[section].sub;
+  q.value="";
+  await loadSection();
+}
+
+async function loadSection(){
+  try{
+    empty.style.display="block";
+    empty.textContent="Načítavam...";
+    grid.innerHTML="";
+    const data=await api("/api/list?type="+encodeURIComponent(state.section));
+    render(normalize(data));
+  }catch(e){
+    empty.style.display="block";
+    empty.textContent=e.message;
+    toast(e.message);
+  }
+}
+
+async function doSearch(){
+  const query=q.value.trim();
+  if(!query)return loadSection();
+  try{
+    empty.style.display="block";
+    empty.textContent="Hľadám...";
+    grid.innerHTML="";
+    const data=await api("/api/search?section="+encodeURIComponent(state.section)+"&q="+encodeURIComponent(query));
+    render(normalize(data));
+  }catch(e){
+    empty.textContent=e.message;
+    toast(e.message);
+  }
+}
+
+async function playItem(it){
+  state.lastPlay=it;
+  playerTitle.textContent=it.title||"Prehrávač";
+  player.classList.add("active");
+  playerBody.innerHTML='<div class="empty" style="margin:22px">Načítavam prehrávač...</div>';
+
+  try{
+    const data=await api("/api/play?url="+encodeURIComponent(it.url));
+
+    if(data.videoUrl){
+      playerBody.innerHTML=`<video controls autoplay playsinline src="${escapeHtml(data.videoUrl)}"></video>`;
+      return;
+    }
+
+    if(data.embedUrl){
+      const proxiedEmbed=API_BASE.replace(/\/$/,"")+"/proxy?url="+encodeURIComponent(data.embedUrl);
+      playerBody.innerHTML=`<iframe class="playerframe" allowfullscreen allow="autoplay; fullscreen; encrypted-media; picture-in-picture" src="${escapeHtml(proxiedEmbed)}"></iframe>`;
+      return;
+    }
+
+    if(data.proxyUrl){
+      playerBody.innerHTML=`<iframe class="playerframe" allowfullscreen allow="autoplay; fullscreen; encrypted-media; picture-in-picture" src="${escapeHtml(API_BASE.replace(/\/$/,"")+data.proxyUrl)}"></iframe>`;
+      return;
+    }
+
+    playerBody.innerHTML='<div class="empty" style="margin:22px">Prehrávač sa nenašiel. Skús inú položku.</div>';
+  }catch(e){
+    playerBody.innerHTML='<div class="empty" style="margin:22px">'+escapeHtml(e.message)+'</div>';
+    toast(e.message);
+  }
+}
+
+closePlayer.onclick=()=>{player.classList.remove("active");playerBody.innerHTML=""};
+reloadPlayer.onclick=()=>{if(state.lastPlay)playItem(state.lastPlay)};
+searchBtn.onclick=doSearch;
+refreshBtn.onclick=loadSection;
+homeBtn.onclick=()=>selectSection(state.section);
+q.addEventListener("keydown",e=>{if(e.key==="Enter")doSearch()});
+selectSection("movies");
 </script>
 </body>
 </html>
