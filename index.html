@@ -19,7 +19,7 @@
 <div class="content-head"><h3>🎬 Výsledky</h3><p id="sectionSub">Zobrazujem iba video súbory. Duplicity sa zlučujú podľa očisteného názvu.</p></div><section class="grid" id="grid"></section><div class="empty" id="empty">Zadaj názov a stlač Hľadať.</div></div>
 <section class="player" id="player"><div class="playerbar"><button class="btn" id="closePlayer">✕ Zavrieť</button><b id="playerTitle">Prehrávač</b><div class="spacer"></div><button class="btn" id="reloadPlayer">↻</button></div><div id="playerBody"></div></section><div class="toast" id="toast"></div>
 <script>
-const API_BASE = "https://TVOJ-WORKER.workers.dev"; // zmeň na URL svojho Cloudflare Workeru
+const API_BASE = "https://lecharchiv-api.virivkyonlinecz.workers.dev/"; // zmeň na URL svojho Cloudflare Workeru
 let state={lastPlay:null,lastItems:[]};
 function toast(msg){const t=document.getElementById("toast");t.textContent=msg;t.style.display="block";setTimeout(()=>t.style.display="none",2800)}
 function escapeHtml(s){return String(s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
