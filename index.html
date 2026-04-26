@@ -322,14 +322,17 @@ function parseEpisodesFromHtml(html,baseUrl){
     }
 
     const imgs=[];
-    area.replace(/<img[^>]+(?:data-src|data-original|src)=["']([^"']+)["'][^>]*>/gi,(all,src)=>{
-      const img=proxiedUrl(unwrapProxy(absolute(src,baseUrl)));
-      if(img && !/\/(hd|cz|sk|play|speaker|audio|flag|icon)/i.test(img)){
-        imgs.push(img);
-      }
-    });
+area.replace(/<img[^>]+(?:data-src|data-original|data-lazy|src)=["']([^"']+)["'][^>]*>/gi,(all,src)=>{
+  const img=proxiedUrl(unwrapProxy(absolute(src,baseUrl)));
+  const bad=/hd|flag|flags|cz|sk|gb|en|play|speaker|audio|sound|icon|rating|star|blank|spacer/i;
+  const good=/\.(jpg|jpeg|png|webp)(\?|$)/i;
 
-    let image=imgs.find(x=>/\.(jpg|jpeg|png|webp)/i.test(x))||"";
+  if(img && good.test(img) && !bad.test(img)){
+    imgs.push(img);
+  }
+});
+
+let image=imgs[0]||"";
 
     episodes.push({
       title,
