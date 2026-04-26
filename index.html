@@ -4,80 +4,260 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>LechPlay</title>
-
 <style>
-body{margin:0;font-family:Arial;background:#0b1220;color:#fff}
-header{padding:16px;background:#111827;display:flex;gap:10px}
-input{flex:1;padding:10px;border-radius:8px;border:none}
-button{padding:10px 14px;border:none;border-radius:8px;background:#6366f1;color:white;cursor:pointer}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;padding:12px}
-.item{background:#1f2937;padding:10px;border-radius:10px;cursor:pointer}
-.player{position:fixed;inset:0;background:black;display:none;flex-direction:column}
+:root{
+  --bg:#070b18;--panel:#111827;--card:#1f2937;--text:#f8fafc;
+  --muted:#9ca3af;--accent:#7c3aed;--accent2:#a855f7;
+}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(circle at top,#1e1b4b,#070b18 45%);color:var(--text);font-family:Arial,system-ui,sans-serif}
+header{position:sticky;top:0;z-index:10;background:rgba(7,11,24,.92);backdrop-filter:blur(12px);padding:18px;display:flex;gap:12px;align-items:center;border-bottom:1px solid rgba(255,255,255,.1)}
+.logo{font-size:24px;font-weight:900;margin-right:10px}
+input{flex:1;padding:15px;border:0;border-radius:14px;font-size:16px}
+button{border:0;border-radius:14px;padding:14px 18px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:white;font-weight:800;cursor:pointer}
+main{padding:22px}
+.hero{padding:34px;border-radius:28px;background:linear-gradient(135deg,rgba(124,58,237,.35),rgba(168,85,247,.12));margin-bottom:22px}
+.hero h1{margin:0 0 10px;font-size:42px}
+.hero p{margin:0;color:var(--muted);font-size:18px}
+.status{color:var(--muted);margin:12px 4px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:18px}
+.card{background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.03));border:1px solid rgba(255,255,255,.1);border-radius:22px;overflow:hidden;cursor:pointer;transition:.18s;min-height:270px}
+.card:hover{transform:translateY(-5px);border-color:var(--accent2)}
+.poster{height:150px;background:linear-gradient(135deg,#312e81,#111827);display:flex;align-items:center;justify-content:center;font-size:54px}
+.info{padding:15px}
+.info h3{margin:0 0 10px;font-size:16px;line-height:1.25}
+.meta{font-size:13px;color:var(--muted);display:flex;gap:8px;flex-wrap:wrap}
+.badge{background:rgba(255,255,255,.08);padding:5px 8px;border-radius:999px}
+.player{position:fixed;inset:0;background:#020617;display:none;z-index:99;flex-direction:column}
 .player.active{display:flex}
-video{width:100%;height:100%}
+.playerbar{height:60px;display:flex;align-items:center;gap:12px;padding:10px 14px;background:#0f172a;border-bottom:1px solid rgba(255,255,255,.1)}
+.playerbar b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.playerbody{flex:1;display:flex;align-items:center;justify-content:center;background:#000}
+video{width:100%;height:100%;background:#000}
+.msg{padding:30px;text-align:center;color:var(--muted)}
+.actions{margin-top:16px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+a.btn{display:inline-block;text-decoration:none;border-radius:14px;padding:13px 16px;background:#374151;color:white;font-weight:800}
+@media(max-width:700px){
+  header{flex-wrap:wrap}
+  .logo{width:100%}
+  .hero h1{font-size:30px}
+  .grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+}
 </style>
 </head>
-
 <body>
 
 <header>
-<input id="q" placeholder="Hľadať film...">
-<button onclick="search()">Hľadať</button>
+  <div class="logo">▶ LechPlay</div>
+  <input id="q" placeholder="Hľadať film alebo súbor..." autocomplete="off">
+  <button id="searchBtn">Hľadať</button>
 </header>
 
-<div class="grid" id="grid"></div>
+<main>
+  <section class="hero">
+    <h1>Filmy a súbory</h1>
+    <p>Vyhľadávanie cez Webshare Worker. Klikni na kartu a spustí sa prehrávač.</p>
+  </section>
 
-<div class="player" id="player">
-<button onclick="closePlayer()">Zavrieť</button>
-<div id="playerBody"></div>
-</div>
+  <div class="status" id="status">Zadaj názov a stlač Hľadať.</div>
+  <section class="grid" id="grid"></section>
+</main>
+
+<section class="player" id="player">
+  <div class="playerbar">
+    <button id="closeBtn">✕ Zavrieť</button>
+    <b id="playerTitle">Prehrávač</b>
+  </div>
+  <div class="playerbody" id="playerBody"></div>
+</section>
 
 <script>
 const API_BASE = "https://lecharchiv-api.virivkyonlinecz.workers.dev";
 
+const q = document.getElementById("q");
+const grid = document.getElementById("grid");
+const statusEl = document.getElementById("status");
+const player = document.getElementById("player");
+const playerTitle = document.getElementById("playerTitle");
+const playerBody = document.getElementById("playerBody");
+
+document.getElementById("searchBtn").onclick = search;
+document.getElementById("closeBtn").onclick = closePlayer;
+q.addEventListener("keydown", e => {
+  if (e.key === "Enter") search();
+});
+
+function escapeHtml(s){
+  return String(s || "").replace(/[&<>"']/g, c => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  }[c]));
+}
+
+function formatSize(bytes){
+  const n = Number(bytes || 0);
+  if (!n) return "";
+  if (n > 1024*1024*1024) return (n/1024/1024/1024).toFixed(2) + " GB";
+  if (n > 1024*1024) return (n/1024/1024).toFixed(0) + " MB";
+  return n + " B";
+}
+
+function getName(item){
+  return item.name || item.title || item.filename || "Bez názvu";
+}
+
+function getId(item){
+  return item.id || item.ident || item.file_id || item.fileId || item.wst || item.url;
+}
+
+function isEpisode(name){
+  return /s\d{1,2}e\d{1,2}|e\d{2}|epizod|episode/i.test(name);
+}
+
+function scoreItem(item){
+  const name = getName(item).toLowerCase();
+  let s = 0;
+
+  if (name.endsWith(".mkv")) s += 8;
+  if (name.endsWith(".mp4")) s += 10;
+  if (name.includes("1080")) s += 25;
+  if (name.includes("2160") || name.includes("4k")) s += 30;
+  if (name.includes("720")) s += 12;
+  if (name.includes("cz")) s += 18;
+  if (name.includes("sk")) s += 18;
+  if (name.includes("dab")) s += 15;
+  if (name.includes("en")) s += 5;
+  if (isEpisode(name)) s -= 40;
+
+  const size = Number(item.size || item.file_size || 0);
+  if (size > 700*1024*1024) s += 10;
+  if (size > 25*1024*1024*1024) s -= 15;
+
+  return s;
+}
+
+function normalizeItems(data){
+  let items = [];
+
+  if (Array.isArray(data)) items = data;
+  else if (Array.isArray(data.items)) items = data.items;
+  else if (Array.isArray(data.results)) items = data.results;
+  else if (Array.isArray(data.files)) items = data.files;
+
+  items = items.filter(it => {
+    const name = getName(it).toLowerCase();
+    return name.endsWith(".mkv") || name.endsWith(".mp4") || name.endsWith(".avi") || name.endsWith(".webm");
+  });
+
+  items.sort((a,b) => scoreItem(b) - scoreItem(a));
+
+  return items;
+}
+
 async function search(){
-  const q = document.getElementById("q").value;
-  const res = await fetch(API_BASE + "/api/search?q=" + encodeURIComponent(q));
-  const data = await res.json();
-  render(data.items || []);
+  const query = q.value.trim();
+  if (!query) return;
+
+  grid.innerHTML = "";
+  statusEl.textContent = "Hľadám...";
+
+  try {
+    const res = await fetch(API_BASE + "/api/search?q=" + encodeURIComponent(query));
+    const data = await res.json();
+
+    if (!res.ok || data.error) {
+      throw new Error(data.message || "Worker chyba");
+    }
+
+    const items = normalizeItems(data);
+    render(items);
+
+  } catch (e) {
+    statusEl.textContent = "Chyba: " + e.message;
+  }
 }
 
 function render(items){
-  const grid = document.getElementById("grid");
   grid.innerHTML = "";
-  items.forEach(it=>{
-    const el = document.createElement("div");
-    el.className = "item";
-    el.innerHTML = it.name || it.title;
-    el.onclick = ()=>play(it);
+
+  if (!items.length) {
+    statusEl.textContent = "Nič sa nenašlo.";
+    return;
+  }
+
+  statusEl.textContent = "Nájdené: " + items.length + " výsledkov";
+
+  for (const item of items) {
+    const name = getName(item);
+    const size = formatSize(item.size || item.file_size);
+    const score = scoreItem(item);
+
+    const el = document.createElement("article");
+    el.className = "card";
+    el.innerHTML = `
+      <div class="poster">🎬</div>
+      <div class="info">
+        <h3>${escapeHtml(name)}</h3>
+        <div class="meta">
+          ${size ? `<span class="badge">${escapeHtml(size)}</span>` : ""}
+          <span class="badge">score ${score}</span>
+          ${name.toLowerCase().endsWith(".mkv") ? `<span class="badge">MKV</span>` : ""}
+          ${name.toLowerCase().endsWith(".mp4") ? `<span class="badge">MP4</span>` : ""}
+        </div>
+      </div>
+    `;
+    el.onclick = () => play(item);
     grid.appendChild(el);
-  });
+  }
 }
 
 async function play(item){
-  const player = document.getElementById("player");
-  const body = document.getElementById("playerBody");
+  const id = getId(item);
+  const name = getName(item);
+
+  if (!id) {
+    alert("Chýba ID súboru.");
+    return;
+  }
+
   player.classList.add("active");
-  body.innerHTML = "Načítavam...";
+  playerTitle.textContent = name;
+  playerBody.innerHTML = `<div class="msg">Načítavam prehrávač...</div>`;
 
   try {
-    const res = await fetch(API_BASE + "/api/play?id=" + item.id);
+    const res = await fetch(API_BASE + "/api/play?id=" + encodeURIComponent(id));
     const data = await res.json();
 
-    if(data.videoUrl){
-      body.innerHTML = `<video controls autoplay playsinline src="${data.videoUrl}"></video>`;
-    } else {
-      body.innerHTML = `<p>Video nejde prehrať</p>`;
+    if (!res.ok || data.error) {
+      throw new Error(data.message || "Chyba prehrávania");
     }
 
-  } catch(e){
-    body.innerHTML = "Chyba prehrávania";
+    const videoUrl = data.videoUrl || data.url || data.link || data.file_link;
+
+    if (!videoUrl) {
+      playerBody.innerHTML = `<div class="msg">Worker nevrátil video link.</div>`;
+      return;
+    }
+
+    playerBody.innerHTML = `
+      <video controls autoplay playsinline src="${escapeHtml(videoUrl)}"></video>
+    `;
+
+  } catch (e) {
+    playerBody.innerHTML = `
+      <div class="msg">
+        <h2>Video sa nepodarilo spustiť</h2>
+        <p>${escapeHtml(e.message)}</p>
+        <div class="actions">
+          <button onclick="closePlayer()">Späť</button>
+        </div>
+      </div>
+    `;
   }
 }
 
 function closePlayer(){
-  document.getElementById("player").classList.remove("active");
-  document.getElementById("playerBody").innerHTML = "";
+  player.classList.remove("active");
+  playerBody.innerHTML = "";
 }
 </script>
 
