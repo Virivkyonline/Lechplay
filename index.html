@@ -443,10 +443,12 @@ async function playItem(it){
   try{
     const data=await api("/api/play?url="+encodeURIComponent(it.url));
     if(data.videoUrl){
-      playerBody.innerHTML=`<div class="video-wrap" id="videoWrap"><video controls autoplay playsinline src="${escapeHtml(data.videoUrl)}"></video><div class="player-logo" id="lechplayLogo">▶ LechPlay</div></div>`;
-      initPlayerLogo();
-      return;
-    }
+  const proxyVideo = API_BASE.replace(/\/$/,"") + "/proxy?url=" + encodeURIComponent(data.videoUrl);
+
+  playerBody.innerHTML=`<div class="video-wrap" id="videoWrap"><video controls autoplay playsinline src="${escapeHtml(proxyVideo)}"></video><div class="player-logo" id="lechplayLogo">▶ LechPlay</div></div>`;
+  initPlayerLogo();
+  return;
+}
     if(data.embedUrl){
       playerBody.innerHTML=`<div class="video-wrap" id="videoWrap"><iframe class="playerframe" allowfullscreen allow="autoplay; fullscreen; encrypted-media; picture-in-picture" src="${escapeHtml(data.embedUrl)}"></iframe><div class="player-logo" id="lechplayLogo">▶ LechPlay</div></div>`;
       initPlayerLogo();
