@@ -388,12 +388,17 @@ async function loadSection(){
     const url=categoryUrl();
     let items=[];
     if(state.categoryPath==="/cs/"){
-      const data=await api("/api/list?type="+encodeURIComponent(state.section));
-      items=normalize(data);
-    }else{
-      const html=await fetchProxyText(url);
-      items=parseItemsFromHtml(html,url);
-    }
+  try{
+    const data=await api("/api/list?type="+encodeURIComponent(state.section));
+    items=normalize(data);
+  }catch(apiErr){
+    const html=await fetchProxyText(url);
+    items=parseItemsFromHtml(html,url);
+  }
+}else{
+  const html=await fetchProxyText(url);
+  items=parseItemsFromHtml(html,url);
+}
     render(items);
   }catch(e){
     empty.style.display="block";
