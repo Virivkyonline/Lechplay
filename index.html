@@ -78,6 +78,7 @@ input{width:100%;border:0;background:transparent;color:var(--text);font-size:16p
 <div class="category-row" id="categoryRow"></div>
 <section class="grid" id="grid"></section><div class="empty" id="empty">Načítavam...</div></div>
 <section class="player" id="player"><div class="playerbar"><button class="btn" id="closePlayer">✕ Zavrieť</button><b id="playerTitle">Prehrávač</b><div class="spacer"></div><button class="btn" id="reloadPlayer">↻</button></div><div id="playerBody"></div></section><div class="toast" id="toast"></div>
+
 <script>
 const API_BASE = "https://lecharchiv-api.virivkyonlinecz.workers.dev";
 const SOURCES={movies:{title:"🎬 Filmy",base:"https://movies.sosac.tv"},series:{title:"📺 Seriály",base:"https://tv.sosac.tv"}};
@@ -228,35 +229,49 @@ function renderCategories(){
 
 function render(items){
   grid.innerHTML="";
-  if(!items.length){empty.style.display="block";empty.textContent="Nič sa nenašlo.";return}
+  if(!items.length){
+    empty.style.display="block";
+    empty.textContent="Nič sa nenašlo.";
+    return;
+  }
+
   empty.style.display="none";
+
   for(const it of items){
     const el=document.createElement("article");
     el.className="item";
-    const icon=state.section==="movies"?"🎬":"📺";
-    const img=it.image?`<img src="${escapeHtml(it.image)}" loading="lazy">`:icon;
+
+    const icon=it.url&&it.url.includes("/cs/player/") ? "▶" : (state.section==="movies" ? "🎬" : "📺");
+    const img=it.image ? `<img src="${escapeHtml(it.image)}" loading="lazy">` : icon;
+
     el.innerHTML=`<div class="poster">${img}</div><div class="meta"><h4>${escapeHtml(it.title||"Bez názvu")}</h4></div>`;
     el.onclick=()=>openItem(it);
     grid.appendChild(el);
   }
 }
-  function render(items){
-  ...
-}
 
 function openItem(it){
-  if(state.section==="series" && it.url.includes("/cs/detail/")){
+  if(state.section==="series" && it.url && it.url.includes("/cs/detail/")){
     loadEpisodes(it);
     return;
   }
   playItem(it);
 }
-  async function loadEpisodes(show){
+
+async function loadEpisodes(show){
   try{
     empty.style.display="block";
     empty.textContent="Načítavam epizódy...";
     grid.innerHTML="";
     sectionTitle.textContent="📺 "+(show.title||"Seriál");
+
+    const row=document.getElementById("categoryRow");
+    row.innerHTML="";
+    const back=document.createElement("button");
+    back.className="category-btn active";
+    back.textContent="← Späť na seriály";
+    back.onclick=()=>selectSection("series");
+    row.appendChild(back);
 
     const html=await fetchProxyText(show.url);
     const episodes=parseEpisodesFromHtml(html,show.url);
@@ -274,30 +289,32 @@ function openItem(it){
     toast(e.message);
   }
 }
-  function parseEpisodesFromHtml(html,baseUrl){
+
+function parseEpisodesFromHtml(html,baseUrl){
   const episodes=[];
+  const text=html||"";
   const re=/<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
   let m;
 
-  while((m=re.exec(html||""))){
+  while((m=re.exec(text))){
     const rawHref=m[1]||"";
-    let url=unwrapProxy(absolute(rawHref,baseUrl));
-    if(!url.includes("/cs/player/"))continue;
+    const url=unwrapProxy(absolute(rawHref,baseUrl));
+    if(!url || !url.includes("/cs/player/"))continue;
 
     const raw=m[2]||"";
-    const after=(html||"").slice(re.lastIndex,re.lastIndex+1500);
+    const after=text.slice(re.lastIndex,re.lastIndex+1500);
 
     let title=
       attr(raw,/title=["']([^"']+)["']/i) ||
       attr(raw,/alt=["']([^"']+)["']/i) ||
       clean(raw) ||
-      first(after,/<h[1-4][^>]*>([\s\S]*?)<\/h[1-4]>/i) ||
+      first(after,/<h1[^>]*>([\s\S]*?)<\/h1>/i) ||
+      first(after,/<h2[^>]*>([\s\S]*?)<\/h2>/i) ||
+      first(after,/<h3[^>]*>([\s\S]*?)<\/h3>/i) ||
       titleFromUrl(url);
 
-    title=title.replace(/\s+/g," ").trim();
-    if(!title){
-      title=titleFromUrl(url)||"Epizóda";
-    }
+    title=String(title||"").replace(/\s+/g," ").trim();
+    if(!title)title="Epizóda";
 
     episodes.push({
       title,
@@ -309,7 +326,7 @@ function openItem(it){
 
   const seen=new Set();
   return episodes.filter(ep=>{
-    if(seen.has(ep.url))return false;
+    if(!ep.url || seen.has(ep.url))return false;
     seen.add(ep.url);
     return true;
   });
