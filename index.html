@@ -314,7 +314,10 @@ function parseEpisodesFromHtml(html,baseUrl){
       titleFromUrl(url);
 
     title=String(title||"").replace(/\s+/g," ").trim();
-    if(!title)title="Epizóda";
+
+if(!title || /^(shl[eé]dnout|sledovat|sledovať|play|prehrát|prehrať)$/i.test(title)){
+  title=titleFromUrl(url)||"Epizóda";
+}
 
     episodes.push({
       title,
