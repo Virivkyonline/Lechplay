@@ -55,7 +55,7 @@ input{width:100%;border:0;background:transparent;color:var(--text);font-size:16p
 .poster{aspect-ratio:2/3;background:linear-gradient(135deg,rgba(255,255,255,.09),rgba(255,255,255,.03));display:grid;place-items:center;font-size:48px}
 .poster img{width:100%;height:100%;object-fit:cover}
 .meta{padding:14px}
-.meta h4{margin:0;font-size:15px;line-height:1.28}
+.meta h4{margin:0;font-size:15px;line-height:1.28}.meta .tag{display:inline-block;margin-top:9px;color:var(--muted);font-size:12px;font-weight:800}
 .empty{padding:38px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:24px;background:rgba(255,255,255,.035)}
 .player{position:fixed;inset:0;background:#020617;z-index:100;display:none}
 .player.active{display:grid;grid-template-rows:auto 1fr}
@@ -125,7 +125,7 @@ const CATEGORIES={
   ]
 };
 
-let state={section:"movies",categoryPath:"/cs/",lastPlay:null};
+let state={section:"movies",categoryPath:"/cs/",lastPlay:null,currentSeries:null,lastItems:[]};
 
 function toast(msg){const t=document.getElementById("toast");t.textContent=msg;t.style.display="block";setTimeout(()=>t.style.display="none",2600)}
 function escapeHtml(s){return String(s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
@@ -187,8 +187,8 @@ function parseItemsFromHtml(html,baseUrl){
     if(!isMovie&&!isSeries)continue;
 
     const raw=m[2]||"";
-    const after=text.slice(re.lastIndex,re.lastIndex+5000);
-    const around=raw+after;
+    const before=text.slice(Math.max(0,re.index-1800),re.index);\n    const after=text.slice(re.lastIndex,re.lastIndex+5000);
+    const around=before+raw+after;
 
     let title=attr(raw,/alt=["']([^"']+)["']/i)||attr(raw,/title=["']([^"']+)["']/i)||clean(raw);
     if(!title||/^\d+$/.test(title)||/^(shl[eé]dnout|sledovat|sledovať|play|více zde|viac zde|\+)$/i.test(title)){
@@ -227,16 +227,19 @@ function renderCategories(){
 }
 
 function render(items){
+  state.lastItems=items||[];
   grid.innerHTML="";
   if(!items.length){empty.style.display="block";empty.textContent="Nič sa nenašlo.";return}
   empty.style.display="none";
   for(const it of items){
     const el=document.createElement("article");
     el.className="item";
-    const icon=state.section==="movies"?"🎬":"📺";
+    const isEpisode=it.kind==="episode";
+    const icon=isEpisode?"▶":(state.section==="movies"?"🎬":"📺");
     const img=it.image?`<img src="${escapeHtml(it.image)}" loading="lazy">`:icon;
-    el.innerHTML=`<div class="poster">${img}</div><div class="meta"><h4>${escapeHtml(it.title||"Bez názvu")}</h4></div>`;
-    el.onclick=()=>playItem(it);
+    const tag=isEpisode?'<span class="tag">Epizóda</span>':(state.section==="series"?'<span class="tag">Seriál</span>':'');
+    el.innerHTML=`<div class="poster">${img}</div><div class="meta"><h4>${escapeHtml(it.title||"Bez názvu")}</h4>${tag}</div>`;
+    el.onclick=()=>openItem(it);
     grid.appendChild(el);
   }
 }
@@ -306,6 +309,58 @@ function initPlayerLogo(){
   wrap.addEventListener("touchstart",showLogo);
   wrap.addEventListener("click",showLogo);
   showLogo();
+}
+
+
+async function openItem(it){
+  if(it.kind==="episode"){
+    return playItem(it);
+  }
+
+  if(state.section==="series"){
+    return openSeriesEpisodes(it);
+  }
+
+  return playItem(it);
+}
+
+async function openSeriesEpisodes(series){
+  state.currentSeries=series;
+  sectionTitle.textContent=series.title||"Epizódy";
+  categoryRow.innerHTML='<button class="category-btn active" id="backToSeriesBtn">← Späť na seriály</button>';
+  document.getElementById("backToSeriesBtn").onclick=()=>{
+    state.currentSeries=null;
+    sectionTitle.textContent=SOURCES[state.section].title;
+    renderCategories();
+    loadSection();
+  };
+
+  try{
+    empty.style.display="block";
+    empty.textContent="Načítavam epizódy...";
+    grid.innerHTML="";
+
+    const data=await api("/api/episodes?url="+encodeURIComponent(series.url));
+    const episodes=(data.episodes||[]).map(ep=>({
+      title:ep.title||"Epizóda",
+      url:ep.url,
+      image:series.image||"",
+      kind:"episode",
+      section:"series"
+    }));
+
+    if(!episodes.length){
+      empty.style.display="block";
+      empty.textContent="Epizódy sa nenašli.";
+      return;
+    }
+
+    render(episodes);
+  }catch(e){
+    empty.style.display="block";
+    empty.textContent=e.message;
+    toast(e.message);
+  }
 }
 
 async function playItem(it){
