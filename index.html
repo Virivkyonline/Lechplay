@@ -319,13 +319,18 @@ if(!title || /^(shl[eé]dnout|sledovat|sledovať|play|prehrát|prehrať)$/i.test
   title=titleFromUrl(url)||"Epizóda";
 }
 
-    episodes.push({
-      title,
-      url,
-      image:"",
-      section:"series"
-    });
-  }
+    let image=
+  firstUrl(raw+after,baseUrl,/<img[^>]+(?:src|data-src)=["']([^"']+)["']/i) ||
+  firstUrl(after,baseUrl,/<img[^>]+(?:src|data-src)=["']([^"']+)["']/i);
+
+image=proxiedUrl(image);
+
+episodes.push({
+  title,
+  url,
+  image,
+  section:"series"
+});
 
   const seen=new Set();
   return episodes.filter(ep=>{
