@@ -240,6 +240,80 @@ function render(items){
     grid.appendChild(el);
   }
 }
+  function render(items){
+  ...
+}
+
+function openItem(it){
+  if(state.section==="series" && it.url.includes("/cs/detail/")){
+    loadEpisodes(it);
+    return;
+  }
+  playItem(it);
+}
+  async function loadEpisodes(show){
+  try{
+    empty.style.display="block";
+    empty.textContent="Načítavam epizódy...";
+    grid.innerHTML="";
+    sectionTitle.textContent="📺 "+(show.title||"Seriál");
+
+    const html=await fetchProxyText(show.url);
+    const episodes=parseEpisodesFromHtml(html,show.url);
+
+    if(!episodes.length){
+      empty.style.display="block";
+      empty.textContent="Epizódy sa nenašli.";
+      return;
+    }
+
+    render(episodes);
+  }catch(e){
+    empty.style.display="block";
+    empty.textContent=e.message;
+    toast(e.message);
+  }
+}
+  function parseEpisodesFromHtml(html,baseUrl){
+  const episodes=[];
+  const re=/<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
+  let m;
+
+  while((m=re.exec(html||""))){
+    const rawHref=m[1]||"";
+    let url=unwrapProxy(absolute(rawHref,baseUrl));
+    if(!url.includes("/cs/player/"))continue;
+
+    const raw=m[2]||"";
+    const after=(html||"").slice(re.lastIndex,re.lastIndex+1500);
+
+    let title=
+      attr(raw,/title=["']([^"']+)["']/i) ||
+      attr(raw,/alt=["']([^"']+)["']/i) ||
+      clean(raw) ||
+      first(after,/<h[1-4][^>]*>([\s\S]*?)<\/h[1-4]>/i) ||
+      titleFromUrl(url);
+
+    title=title.replace(/\s+/g," ").trim();
+    if(!title){
+      title=titleFromUrl(url)||"Epizóda";
+    }
+
+    episodes.push({
+      title,
+      url,
+      image:"",
+      section:"series"
+    });
+  }
+
+  const seen=new Set();
+  return episodes.filter(ep=>{
+    if(seen.has(ep.url))return false;
+    seen.add(ep.url);
+    return true;
+  });
+}
 
 async function selectSection(section){
   state.section=section;
