@@ -196,8 +196,19 @@ function parseItemsFromHtml(html,baseUrl){
       title=first(after,/<h1[^>]*>([\s\S]*?)<\/h1>/i)||first(after,/<h2[^>]*>([\s\S]*?)<\/h2>/i)||first(after,/<h3[^>]*>([\s\S]*?)<\/h3>/i)||titleFromUrl(url)||title;
     }
 
-    let image=firstUrl(around,baseUrl,/<img[^>]+(?:src|data-src)=["']([^"']+)["']/i)||firstUrl(around,baseUrl,/(?:background-image|background)\s*:\s*url\(["']?([^"')]+)["']?\)/i);
-    image=proxiedUrl(image);
+    let image="";
+const imgs=[];
+around.replace(/<img[^>]+(?:data-src|data-original|data-lazy|src)=["']([^"']+)["'][^>]*>/gi,(all,src)=>{
+  const img=proxiedUrl(unwrapProxy(absolute(src,baseUrl)));
+  const bad=/hd|flag|flags|cz|sk|gb|en|play|speaker|audio|sound|icon|rating|star|blank|spacer/i;
+  const good=/\.(jpg|jpeg|png|webp)(\?|$)/i;
+
+  if(img && good.test(img) && !bad.test(img)){
+    imgs.push(img);
+  }
+});
+
+image=imgs[0]||"";
 
     title=String(title||"").replace(/^\s*\d+\s+/,"").replace(/\s+/g," ").trim();
     if(!title||title==="Titulky"||title==="close")continue;
