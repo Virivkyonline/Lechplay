@@ -319,9 +319,11 @@ if(!title || /^(shl[eé]dnout|sledovat|sledovať|play|prehrát|prehrať)$/i.test
   title=titleFromUrl(url)||"Epizóda";
 }
 
-    let image=
-  firstUrl(raw+after,baseUrl,/<img[^>]+(?:src|data-src)=["']([^"']+)["']/i) ||
-  firstUrl(after,baseUrl,/<img[^>]+(?:src|data-src)=["']([^"']+)["']/i);
+    let image =
+  firstUrl(raw+after,baseUrl,/<img[^>]+data-src=["']([^"']+)["']/i) ||
+  firstUrl(raw+after,baseUrl,/<img[^>]+src=["']([^"']+)["']/i) ||
+  firstUrl(after,baseUrl,/<img[^>]+data-src=["']([^"']+)["']/i) ||
+  firstUrl(after,baseUrl,/<img[^>]+src=["']([^"']+)["']/i);
 
 image=proxiedUrl(image);
 
