@@ -187,7 +187,7 @@ function parseItemsFromHtml(html,baseUrl){
     if(!isMovie&&!isSeries)continue;
 
     const raw=m[2]||"";
-    const after=text.slice(re.lastIndex,re.lastIndex+1800);
+    const after=text.slice(re.lastIndex,re.lastIndex+5000);
     const around=raw+after;
 
     let title=attr(raw,/alt=["']([^"']+)["']/i)||attr(raw,/title=["']([^"']+)["']/i)||clean(raw);
