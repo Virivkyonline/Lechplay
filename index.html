@@ -253,7 +253,9 @@ function render(items){
     el.className="item";
 
     const icon=it.url&&it.url.includes("/cs/player/") ? "▶" : (state.section==="movies" ? "🎬" : "📺");
-    const img=it.image ? `<img src="${escapeHtml(it.image)}" loading="lazy">` : icon;
+    const badImage=/hd|flag|flags|cz|sk|gb|en|play|speaker|audio|sound|icon|rating|star|blank|spacer/i;
+const useImage=it.image && !badImage.test(it.image);
+const img=useImage ? `<img src="${escapeHtml(it.image)}" loading="lazy">` : icon;
 
     el.innerHTML=`<div class="poster">${img}</div><div class="meta"><h4>${escapeHtml(it.title||"Bez názvu")}</h4></div>`;
     el.onclick=()=>openItem(it);
