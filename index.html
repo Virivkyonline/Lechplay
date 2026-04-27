@@ -448,9 +448,11 @@ async function playItem(it){
       return;
     }
     if(data.embedUrl){
-      playerBody.innerHTML=`<div class="video-wrap" id="videoWrap"><iframe class="playerframe" allowfullscreen allow="autoplay; fullscreen; encrypted-media; picture-in-picture" src="${escapeHtml(data.embedUrl)}"></iframe><div class="player-logo" id="lechplayLogo">▶ LechPlay</div></div>`;
-      initPlayerLogo();
-      return;
+  const embedProxy = API_BASE.replace(/\/$/,"") + "/proxy?url=" + encodeURIComponent(data.embedUrl);
+  playerBody.innerHTML=`<div class="video-wrap" id="videoWrap"><iframe class="playerframe" allowfullscreen allow="autoplay; fullscreen; encrypted-media; picture-in-picture" src="${escapeHtml(embedProxy)}"></iframe><div class="player-logo" id="lechplayLogo">▶ LechPlay</div></div>`;
+  initPlayerLogo();
+  return;
+}
     }
     if(data.proxyUrl){
       playerBody.innerHTML=`<div class="video-wrap" id="videoWrap"><iframe class="playerframe" allowfullscreen allow="autoplay; fullscreen; encrypted-media; picture-in-picture" src="${escapeHtml(API_BASE.replace(/\/$/,"")+data.proxyUrl)}"></iframe><div class="player-logo" id="lechplayLogo">▶ LechPlay</div></div>`;
