@@ -458,13 +458,14 @@ async function playItem(it){
       return;
     }
 
-    if(data.embedUrl){
+       if(data.embedUrl){
       playerBody.innerHTML=`<div class="video-wrap" id="videoWrap"><iframe class="playerframe" allowfullscreen allow="autoplay; fullscreen; encrypted-media; picture-in-picture" src="${escapeHtml(data.embedUrl)}"></iframe><div class="player-logo" id="lechplayLogo">▶ LechPlay</div></div>`;
       initPlayerLogo();
       return;
     }
-}
+
     playerBody.innerHTML='<div class="empty" style="margin:22px">Prehrávač sa nenašiel. Skús inú položku.</div>';
+
   }catch(e){
     playerBody.innerHTML='<div class="empty" style="margin:22px">'+escapeHtml(e.message)+'</div>';
     toast(e.message);
