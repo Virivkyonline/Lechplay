@@ -458,15 +458,13 @@ async function playItem(it){
       return;
     }
 
-       if(data.embedUrl){
-  const proxied = API_BASE.replace(/\/$/,"") + "/proxy?url=" + encodeURIComponent(data.embedUrl);
-
+      if(data.embedUrl){
   playerBody.innerHTML=`
     <div class="video-wrap" id="videoWrap">
       <iframe class="playerframe"
         allowfullscreen
         allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
-        src="${escapeHtml(proxied)}">
+        src="${escapeHtml(data.embedUrl)}">
       </iframe>
       <div class="player-logo" id="lechplayLogo">▶ LechPlay</div>
     </div>`;
