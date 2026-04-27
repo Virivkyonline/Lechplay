@@ -461,42 +461,16 @@ async function playItem(it){
       if(data.embedUrl){
   playerBody.innerHTML=`
     <div class="video-wrap" id="videoWrap">
-
-      <iframe id="streamujFrame" class="playerframe"
+      <iframe class="playerframe"
         allowfullscreen
         allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
-        src="https://www.streamuj.tv/">
+        src="${escapeHtml(data.embedUrl)}">
       </iframe>
-
-      <div style="
-        position:absolute;
-        inset:0;
-        display:flex;
-        align-items:center;
-        justify-content:center;
-        background:rgba(0,0,0,.6);
-        z-index:20;
-        color:white;
-        text-align:center;
-        padding:20px;
-      ">
-        <div>
-          <b>🔐 Prihlás sa do Streamuj</b><br><br>
-          <button onclick="
-            document.getElementById('streamujFrame').src='${escapeHtml(data.embedUrl)}'
-            this.parentElement.parentElement.remove()
-          ">
-            Som prihlásený → pokračovať
-          </button>
-        </div>
-      </div>
-
       <div class="player-logo" id="lechplayLogo">▶ LechPlay</div>
     </div>`;
   initPlayerLogo();
   return;
 }
-
     playerBody.innerHTML='<div class="empty" style="margin:22px">Prehrávač sa nenašiel. Skús inú položku.</div>';
 
   }catch(e){
