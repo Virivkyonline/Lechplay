@@ -448,8 +448,7 @@ async function playItem(it){
       return;
     }
     if(data.embedUrl){
-  const embedProxy = API_BASE.replace(/\/$/,"") + "/proxy?url=" + encodeURIComponent(data.embedUrl);
-  playerBody.innerHTML=`<div class="video-wrap" id="videoWrap"><iframe class="playerframe" allowfullscreen allow="autoplay; fullscreen; encrypted-media; picture-in-picture" src="${escapeHtml(embedProxy)}"></iframe><div class="player-logo" id="lechplayLogo">▶ LechPlay</div></div>`;
+  playerBody.innerHTML=`<div class="video-wrap" id="videoWrap"><iframe class="playerframe" allowfullscreen allow="autoplay; fullscreen; encrypted-media; picture-in-picture" src="${escapeHtml(data.embedUrl)}"></iframe><div class="player-logo" id="lechplayLogo">▶ LechPlay</div></div>`;
   initPlayerLogo();
   return;
     }
