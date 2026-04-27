@@ -461,11 +461,49 @@ async function playItem(it){
       if(data.embedUrl){
   playerBody.innerHTML=`
     <div class="video-wrap" id="videoWrap">
-      <iframe class="playerframe"
+
+      <iframe id="streamujFrame"
+        class="playerframe"
         allowfullscreen
         allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
-        src="${escapeHtml(data.embedUrl)}">
+        src="https://www.streamuj.tv/">
       </iframe>
+
+      <div id="loginOverlay" style="
+        position:absolute;
+        inset:0;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        background:rgba(0,0,0,.72);
+        z-index:30;
+        color:white;
+        text-align:center;
+        padding:24px;
+      ">
+        <div style="
+          max-width:420px;
+          padding:24px;
+          border-radius:24px;
+          background:rgba(15,23,42,.92);
+          border:1px solid rgba(255,255,255,.18);
+          box-shadow:0 20px 70px rgba(0,0,0,.55);
+        ">
+          <div style="font-size:42px;margin-bottom:12px">🔐</div>
+          <h3 style="margin:0 0 10px;font-size:24px">Prihlásenie Streamuj</h3>
+          <p style="margin:0 0 18px;color:#cbd5e1;line-height:1.5">
+            Prihlás sa vo vloženom okne Streamuj. Heslo nevidí LechPlay.
+          </p>
+
+          <button class="btn primary" onclick="
+            document.getElementById('streamujFrame').src='${escapeHtml(data.embedUrl)}';
+            document.getElementById('loginOverlay').remove();
+          ">
+            Som prihlásený → spustiť video
+          </button>
+        </div>
+      </div>
+
       <div class="player-logo" id="lechplayLogo">▶ LechPlay</div>
     </div>`;
   initPlayerLogo();
